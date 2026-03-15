@@ -1,0 +1,42 @@
+name: "CodeQL Pentest Audit"
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Allows you to trigger the scan manually
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Add the languages present in the repository
+        language: [ 'javascript', 'python', 'java' ] 
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        # THIS IS THE CRITICAL LINE: It tells CodeQL to run the most aggressive suite
+        queries: security-extended,security-and-quality
+
+    # (If compiled language like Java/C#/C++, autobuild will run here)
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
